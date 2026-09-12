@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('schedules', function (Blueprint $table) {
             $table->id();
+            $table->string('teacher_name');
+            $table->string('subject');
+            $table->string('class_name');
+            $table->time('start_time');
+            $table->time('end_time');
             $table->timestamps();
         });
     }
