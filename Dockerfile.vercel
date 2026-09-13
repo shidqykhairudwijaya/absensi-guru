@@ -5,6 +5,11 @@ RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
 
 WORKDIR /app
 
+
+# =========================
+# Laravel dependencies
+# =========================
+
 FROM base AS dependencies
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -14,10 +19,9 @@ COPY composer.json composer.lock ./
 RUN composer install \
     --no-dev \
     --no-interaction \
-    --no-progress \
-    --no-scripts \
+    --prefer-dist \
     --optimize-autoloader \
-    --prefer-dist
+    --no-scripts
 
 COPY . .
 
@@ -25,8 +29,14 @@ RUN mkdir -p \
     storage/framework/cache \
     storage/framework/sessions \
     storage/framework/views \
-    bootstrap/cache \
-    && composer dump-autoload --no-dev --classmap-authoritative
+    bootstrap/cache
+
+RUN composer dump-autoload --optimize
+
+
+# =========================
+# Frontend
+# =========================
 
 FROM node:20 AS frontend
 
@@ -42,6 +52,11 @@ COPY vite.config.js ./
 
 RUN npm run build
 
+
+# =========================
+# Runtime
+# =========================
+
 FROM base AS runtime
 
 COPY --from=dependencies --chown=www-data:www-data /app /app
@@ -56,8 +71,7 @@ RUN chown -R www-data:www-data \
     /config/caddy \
     /data/caddy
 
-ENV PORT=80 \
-    APP_ENV=production \
+ENV APP_ENV=production \
     APP_DEBUG=false \
     LOG_CHANNEL=stderr \
     SESSION_DRIVER=file \
