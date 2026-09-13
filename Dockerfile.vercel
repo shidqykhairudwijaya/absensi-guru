@@ -1,18 +1,19 @@
-FROM php:8.2-cli
+FROM php:8.2-cli-bookworm
 
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libpq-dev \
-    && docker-php-ext-install pdo pdo_pgsql
+    curl \
+    xz-utils \
+    && docker-php-ext-install pdo pdo_pgsql \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Install Node.js + npm
-COPY --from=node:20 /usr/local/bin/node /usr/local/bin/node
-COPY --from=node:20 /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node:20 /usr/local/bin/npm /usr/local/bin/npm
-COPY --from=node:20 /usr/local/bin/npx /usr/local/bin/npx
+# Install Node.js dan npm
+RUN curl -fsSL https://nodejs.org/dist/v20.20.2/node-v20.20.2-linux-x64.tar.xz \
+    | tar -xJ -C /usr/local --strip-components=1
 
 WORKDIR /var/www
 
